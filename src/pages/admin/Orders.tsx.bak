@@ -1,0 +1,536 @@
+// ============================================================================
+// SweetCrumb Bakery - Admin Orders Page
+// ============================================================================
+
+import { useMemo, useState, type ReactNode } from 'react';
+import { Search, Calendar, Truck, AlertTriangle } from 'lucide-react';
+import {
+  Button,
+  Input,
+  Select,
+  Card,
+  Modal,
+  Table,
+  createOrderColumns,
+  StatusBadge,
+} from '@/components/ui';
+import { formatCurrency, formatDate, type OrderStatusName } from '@/types';
+
+const mockOrders = [
+  {
+    orderId: 'ORD-1705678901234',
+    customerId: 'cust-1',
+    customerName: 'Maria Santos',
+    customerEmail: 'maria@example.com',
+    customerPhone: '+63 912 345 6789',
+    orderDate: '2024-01-20T14:30:00Z',
+    totalAmount: 50400,
+    statusName: 'Confirmed' as OrderStatusName,
+    pickupDate: '2024-01-22',
+    pickupTime: '10:00-11:00',
+    itemCount: 2,
+    remarks: 'Please write "Happy Birthday Maria" on the box',
+    items: [
+      { productName: 'Classic Chocolate Fudge Cake', quantity: 1, unitPriceAtOrder: 45000, lineTotal: 45000 },
+      { productName: 'Chocolate Chip Cookies (6)', quantity: 1, unitPriceAtOrder: 12000, lineTotal: 12000 },
+    ],
+  },
+  {
+    orderId: 'ORD-1705678801234',
+    customerId: 'cust-2',
+    customerName: 'Juan Dela Cruz',
+    customerEmail: 'juan@example.com',
+    customerPhone: '+63 918 765 4321',
+    orderDate: '2024-01-20T13:15:00Z',
+    totalAmount: 42000,
+    statusName: 'Preparing' as OrderStatusName,
+    pickupDate: '2024-01-21',
+    pickupTime: '14:00-15:00',
+    itemCount: 1,
+    remarks: '',
+    items: [{ productName: 'Red Velvet Dream', quantity: 1, unitPriceAtOrder: 42000, lineTotal: 42000 }],
+  },
+  {
+    orderId: 'ORD-1705678701234',
+    customerId: 'cust-3',
+    customerName: 'Ana Reyes',
+    customerEmail: 'ana@example.com',
+    customerPhone: '+63 917 555 1234',
+    orderDate: '2024-01-20T11:45:00Z',
+    totalAmount: 95000,
+    statusName: 'Ready for Pickup' as OrderStatusName,
+    pickupDate: '2024-01-20',
+    pickupTime: '10:00-11:00',
+    itemCount: 1,
+    remarks: 'Anniversary cake',
+    items: [{ productName: 'Rustic Naked Cake (Wedding)', quantity: 1, unitPriceAtOrder: 95000, lineTotal: 95000 }],
+  },
+  {
+    orderId: 'ORD-1705678601234',
+    customerId: 'cust-4',
+    customerName: 'Pedro Garcia',
+    customerEmail: 'pedro@example.com',
+    customerPhone: '+63 915 999 8888',
+    orderDate: '2024-01-20T10:30:00Z',
+    totalAmount: 38000,
+    statusName: 'Pending' as OrderStatusName,
+    pickupDate: '2024-01-22',
+    pickupTime: '14:00-15:00',
+    itemCount: 1,
+    remarks: '',
+    items: [{ productName: 'Strawberry Shortcake', quantity: 1, unitPriceAtOrder: 38000, lineTotal: 38000 }],
+  },
+  {
+    orderId: 'ORD-1705678501234',
+    customerId: 'cust-5',
+    customerName: 'Sofia Lopez',
+    customerEmail: 'sofia@example.com',
+    customerPhone: '+63 920 111 2222',
+    orderDate: '2024-01-19T16:20:00Z',
+    totalAmount: 48000,
+    statusName: 'Completed' as OrderStatusName,
+    pickupDate: '2024-01-19',
+    pickupTime: '10:00-11:00',
+    itemCount: 2,
+    remarks: '',
+    items: [{ productName: 'Ube Cheesecake', quantity: 1, unitPriceAtOrder: 48000, lineTotal: 48000 }],
+  },
+  {
+    orderId: 'ORD-1705678401234',
+    customerId: 'cust-6',
+    customerName: 'Miguel Torres',
+    customerEmail: 'miguel@example.com',
+    customerPhone: '+63 919 333 4444',
+    orderDate: '2024-01-19T14:10:00Z',
+    totalAmount: 120000,
+    statusName: 'Preparing' as OrderStatusName,
+    pickupDate: '2024-01-21',
+    pickupTime: '14:00-15:00',
+    itemCount: 1,
+    remarks: 'Wedding cake - 3 tiers',
+    items: [{ productName: 'Elegant White Wedding', quantity: 1, unitPriceAtOrder: 120000, lineTotal: 120000 }],
+  },
+  {
+    orderId: 'ORD-1705678301234',
+    customerId: 'cust-7',
+    customerName: 'Carmen Ruiz',
+    customerEmail: 'carmen@example.com',
+    customerPhone: '+63 916 777 8888',
+    orderDate: '2024-01-18T09:45:00Z',
+    totalAmount: 18000,
+    statusName: 'Completed' as OrderStatusName,
+    pickupDate: '2024-01-18',
+    pickupTime: '10:00-11:00',
+    itemCount: 1,
+    remarks: '',
+    items: [{ productName: 'Chocolate Cupcake Box (6)', quantity: 1, unitPriceAtOrder: 18000, lineTotal: 18000 }],
+  },
+  {
+    orderId: 'ORD-1705678201234',
+    customerId: 'cust-8',
+    customerName: 'Ricardo Santos',
+    customerEmail: 'ricardo@example.com',
+    customerPhone: '+63 917 222 3333',
+    orderDate: '2024-01-18T11:30:00Z',
+    totalAmount: 14000,
+    statusName: 'Cancelled' as OrderStatusName,
+    pickupDate: '2024-01-19',
+    pickupTime: '14:00-15:00',
+    itemCount: 1,
+    remarks: 'Customer cancelled',
+    items: [{ productName: 'Fudge Brownies (6)', quantity: 1, unitPriceAtOrder: 14000, lineTotal: 14000 }],
+  },
+];
+
+const statusOptions = [
+  { value: '', label: 'All Statuses' },
+  { value: 'Pending', label: 'Pending' },
+  { value: 'Confirmed', label: 'Confirmed' },
+  { value: 'Preparing', label: 'Preparing' },
+  { value: 'Ready for Pickup', label: 'Ready for Pickup' },
+  { value: 'Completed', label: 'Completed' },
+];
+
+export function Orders() {
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [sortBy, setSortBy] = useState('date-desc');
+  const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showStatusModal, setShowStatusModal] = useState(false);
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
+
+  const filteredOrders = useMemo(() => {
+    return mockOrders.filter((order) => {
+      const matchesSearch =
+        !search ||
+        order.orderId.toLowerCase().includes(search.toLowerCase()) ||
+        order.customerName.toLowerCase().includes(search.toLowerCase()) ||
+        order.customerEmail.toLowerCase().includes(search.toLowerCase());
+      const matchesStatus = !statusFilter || order.statusName === statusFilter;
+      const matchesDateFrom = !dateFrom || order.orderDate >= dateFrom;
+      const matchesDateTo = !dateTo || order.orderDate <= dateTo;
+      return matchesSearch && matchesStatus && matchesDateFrom && matchesDateTo;
+    });
+  }, [search, statusFilter, dateFrom, dateTo]);
+
+  const sortedOrders = useMemo(() => {
+    const sorted = [...filteredOrders];
+    switch (sortBy) {
+      case 'date-asc':
+        sorted.sort((a, b) => new Date(a.orderDate).getTime() - new Date(b.orderDate).getTime());
+        break;
+      case 'amount-desc':
+        sorted.sort((a, b) => b.totalAmount - a.totalAmount);
+        break;
+      case 'amount-asc':
+        sorted.sort((a, b) => a.totalAmount - b.totalAmount);
+        break;
+      default:
+        sorted.sort((a, b) => new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime());
+    }
+    return sorted;
+  }, [filteredOrders, sortBy]);
+
+  const totalPages = Math.ceil(sortedOrders.length / pageSize);
+  const paginatedOrders = sortedOrders.slice((page - 1) * pageSize, page * pageSize);
+  const hasActiveFilters = Boolean(statusFilter || dateFrom || dateTo);
+
+  const columns = createOrderColumns(
+    (order) => {
+      setSelectedOrder(order);
+      setShowDetailModal(true);
+    },
+    (order) => {
+      setSelectedOrder(order);
+      setShowStatusModal(true);
+    }
+  );
+
+  const handleSortChange = (key: string, direction: 'asc' | 'desc') => {
+    const map: Record<string, string> = {
+      orderDate_desc: 'date-desc',
+      orderDate_asc: 'date-asc',
+      totalAmount_desc: 'amount-desc',
+      totalAmount_asc: 'amount-asc',
+    };
+    setSortBy(map[`${key}_${direction}`] || 'date-desc');
+  };
+
+  const handleStatusUpdate = (newStatus: OrderStatusName) => {
+    if (!selectedOrder) return;
+    console.log('Update order status:', selectedOrder.orderId, '->', newStatus);
+    setShowStatusModal(false);
+    setSelectedOrder(null);
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-display-md font-display font-medium text-charcoal-900">Orders</h1>
+          <p className="text-body text-text-muted mt-1">Manage and process customer orders</p>
+        </div>
+
+        <Button variant="outline" leftIcon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>}>
+          Export
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+        <StatSummary title="Total Orders" value={filteredOrders.length} icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a2 2 0 00-2-2H6a2 2 0 00-2 2v4a2 2 0 002 2h12a2 2 0 002-2v-4a2 2 0 00-2-2zm-12 4a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2v-4z" /></svg>} />
+        <StatSummary title="Pending" value={filteredOrders.filter((o) => o.statusName === 'Pending').length} icon={<AlertTriangle className="w-5 h-5" />} color="text-warm-600" bg="bg-warm-100" />
+        <StatSummary title="Preparing" value={filteredOrders.filter((o) => o.statusName === 'Preparing').length} icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>} color="text-primary" bg="bg-primary-light" />
+        <StatSummary title="Ready" value={filteredOrders.filter((o) => o.statusName === 'Ready for Pickup').length} icon={<Truck className="w-5 h-5" />} color="text-sage-600" bg="bg-sage-100" />
+      </div>
+
+      <Card className="p-4 sm:p-6 mb-6">
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex-1 min-w-[200px]">
+            <label className="label">Search Orders</label>
+            <Input
+              type="search"
+              placeholder="Search by order ID, customer, email..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              leftIcon={<Search className="w-4 h-4" />}
+            />
+          </div>
+
+          <div className="flex flex-wrap gap-3 items-end">
+            <Select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} options={statusOptions} className="w-full sm:w-40" />
+
+            <Input type="date" value={dateFrom} onChange={(event) => setDateFrom(event.target.value)} placeholder="From" className="w-full sm:w-36" leftIcon={<Calendar className="w-4 h-4" />} />
+
+            <Input type="date" value={dateTo} onChange={(event) => setDateTo(event.target.value)} placeholder="To" className="w-full sm:w-36" leftIcon={<Calendar className="w-4 h-4" />} />
+
+            <Select
+              value={sortBy}
+              onChange={(event) => setSortBy(event.target.value)}
+              options={[
+                { value: 'date-desc', label: 'Newest First' },
+                { value: 'date-asc', label: 'Oldest First' },
+                { value: 'amount-desc', label: 'Highest Amount' },
+                { value: 'amount-asc', label: 'Lowest Amount' },
+              ]}
+              className="w-full sm:w-40"
+            />
+
+            {hasActiveFilters && (
+              <Button variant="ghost" size="sm" onClick={() => { setStatusFilter(''); setDateFrom(''); setDateTo(''); }}>
+                Clear
+              </Button>
+            )}
+          </div>
+        </div>
+      </Card>
+
+      <Card>
+        {paginatedOrders.length === 0 ? (
+          <div className="p-12 text-center">
+            <svg className="w-16 h-16 mx-auto text-charcoal-200 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <h2 className="text-heading-lg font-medium text-charcoal-900 mb-2">No orders found</h2>
+            <p className="text-body text-text-muted mb-6">Try adjusting your filters or search terms</p>
+            {hasActiveFilters && (
+              <Button variant="outline" onClick={() => { setStatusFilter(''); setDateFrom(''); setDateTo(''); }}>
+                Clear Filters
+              </Button>
+            )}
+          </div>
+        ) : (
+          <>
+            <Table
+              columns={columns}
+              data={paginatedOrders}
+              keyExtractor={(order) => order.orderId}
+              striped
+              hoverable
+              sortable
+              onSort={handleSortChange}
+              defaultSortKey="orderDate"
+              defaultSortDirection="desc"
+            />
+
+            {totalPages > 1 && (
+              <div className="p-4 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4">
+                <span className="text-body-sm text-text-secondary">
+                  Showing {(page - 1) * pageSize + 1} to {Math.min(page * pageSize, sortedOrders.length)} of {sortedOrders.length} orders
+                </span>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>
+                    Prev
+                  </Button>
+
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, index) => {
+                    let pageNum = index + 1;
+                    if (totalPages > 5) {
+                      if (page <= 3) pageNum = index + 1;
+                      else if (page >= totalPages - 2) pageNum = totalPages - 4 + index;
+                      else pageNum = page - 2 + index;
+                    }
+
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={page === pageNum ? 'primary' : 'outline'}
+                        size="sm"
+                        onClick={() => setPage(pageNum)}
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  })}
+
+                  <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages}>
+                    Next
+                  </Button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </Card>
+
+      <Modal
+        isOpen={showDetailModal}
+        onClose={() => { setShowDetailModal(false); setSelectedOrder(null); }}
+        title="Order Details"
+        size="xl"
+      >
+        {selectedOrder && <OrderDetailModal order={selectedOrder} onClose={() => { setShowDetailModal(false); setSelectedOrder(null); }} />}
+      </Modal>
+
+      <Modal
+        isOpen={showStatusModal}
+        onClose={() => { setShowStatusModal(false); setSelectedOrder(null); }}
+        title="Update Order Status"
+        size="md"
+      >
+        {selectedOrder && (
+          <StatusUpdateModal
+            order={selectedOrder}
+            onClose={() => { setShowStatusModal(false); setSelectedOrder(null); }}
+            onUpdate={handleStatusUpdate}
+          />
+        )}
+      </Modal>
+    </div>
+  );
+}
+
+function StatSummary({ title, value, icon, color = 'text-primary', bg = 'bg-primary-light' }: { title: string; value: number; icon: ReactNode; color?: string; bg?: string }) {
+  return (
+    <Card variant="hover" padding="md" className="text-center">
+      <div className={`w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-3 ${bg} ${color}`}>{icon}</div>
+      <p className="text-display-sm font-semibold text-charcoal-900">{value}</p>
+      <p className="text-caption text-text-muted">{title}</p>
+    </Card>
+  );
+}
+
+function OrderDetailModal({ order, onClose }: { order: any; onClose: () => void }) {
+  const formatTime = (timeStr: string) => {
+    const [hours, minutes] = timeStr.split(':');
+    const hour = Number.parseInt(hours, 10);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const hour12 = hour % 12 || 12;
+    return `${hour12}:${minutes} ${ampm}`;
+  };
+
+  return (
+    <div className="space-y-6 max-h-[70vh] overflow-y-auto">
+      <div className="p-4 bg-warm-50 rounded-xl">
+        <h4 className="font-medium text-charcoal-900 mb-4">Order Status</h4>
+        <div className="space-y-4">
+          {['Pending', 'Confirmed', 'Preparing', 'Ready for Pickup', 'Completed'].map((step, index) => {
+            const stepOrder = ['Pending', 'Confirmed', 'Preparing', 'Ready for Pickup', 'Completed'];
+            const isCompleted = stepOrder.indexOf(order.statusName) >= index;
+            const isCurrent = order.statusName === step;
+            return (
+              <div key={step} className="flex items-center gap-4">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-body-sm font-medium flex-shrink-0 ${isCompleted ? 'bg-primary text-white' : 'bg-charcoal-100 text-charcoal-400'}`}>
+                  {isCompleted ? <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg> : index + 1}
+                </div>
+                <div className="flex-1">
+                  <p className={isCompleted ? 'font-medium text-charcoal-900' : 'text-text-muted'}>{step}</p>
+                </div>
+                {isCurrent && <StatusBadge status={order.statusName} size="sm" />}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="grid sm:grid-cols-2 gap-4">
+        <div className="space-y-3">
+          <InfoRow label="Order Number" value={order.orderId} monospace />
+          <InfoRow label="Customer" value={`${order.customerName} (${order.customerEmail})`} />
+          <InfoRow label="Phone" value={order.customerPhone} />
+          <InfoRow label="Order Date" value={formatDate(order.orderDate)} />
+        </div>
+        <div className="space-y-3">
+          <InfoRow label="Pickup Date" value={`${formatDate(order.pickupDate)} at ${formatTime(order.pickupTime)}`} />
+          <InfoRow label="Items" value={`${order.itemCount} item(s)`} />
+          <InfoRow label="Total" value={formatCurrency(order.totalAmount)} highlight />
+          <InfoRow label="Status" value={<StatusBadge status={order.statusName} size="md" />} />
+        </div>
+      </div>
+
+      {order.remarks && (
+        <div className="p-4 bg-warm-50 rounded-xl">
+          <p className="text-caption text-text-muted uppercase tracking-wider mb-1">Special Instructions</p>
+          <p className="text-body text-text-secondary">{order.remarks}</p>
+        </div>
+      )}
+
+      <div className="border-t border-border pt-4">
+        <h4 className="font-medium text-charcoal-900 mb-3">Order Items</h4>
+        <div className="space-y-3">
+          {order.items.map((item: any, index: number) => (
+            <div key={`${item.productName}-${index}`} className="flex items-center justify-between p-3 bg-warm-50/50 rounded-lg">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-warm-100 flex items-center justify-center">
+                  <svg className="w-5 h-5 text-warm-400" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C13.1 2 14 2.9 14 4C14 5.1 13.1 6 12 6C10.9 6 10 5.1 10 4C10 2.9 10.9 2 12 2ZM12 8C13.1 8 14 8.9 14 10C14 11.1 13.1 12 12 12C10.9 12 10 11.1 10 10C10 8.9 10.9 8 12 8ZM12 14C13.1 14 14 14.9 14 16C14 17.1 13.1 18 12 18C10.9 18 10 17.1 10 16C10 14.9 10.9 14 12 14ZM4 20V18C4 16.34 5.34 15 7 15H17C18.66 15 20 16.34 20 18V20H4Z" /></svg>
+                </div>
+                <div>
+                  <p className="font-medium text-charcoal-900 truncate max-w-[240px]">{item.productName}</p>
+                  <p className="text-body-sm text-text-muted">Qty: {item.quantity} × {formatCurrency(item.unitPriceAtOrder)}</p>
+                </div>
+              </div>
+              <p className="font-semibold text-primary">{formatCurrency(item.lineTotal)}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="p-4 bg-white rounded-xl border border-border">
+        <div className="space-y-2">
+          <div className="flex justify-between text-body"><span className="text-text-secondary">Subtotal</span><span className="font-medium text-charcoal-900">{formatCurrency(order.items.reduce((acc: number, item: any) => acc + item.lineTotal, 0))}</span></div>
+          <div className="flex justify-between text-body"><span className="text-text-secondary">Tax (12%)</span><span className="font-medium text-charcoal-900">{formatCurrency(Math.round(order.items.reduce((acc: number, item: any) => acc + item.lineTotal, 0) * 0.12))}</span></div>
+          <div className="flex justify-between text-body"><span className="text-sage-600">Pickup Fee</span><span className="font-medium text-sage-600">Free</span></div>
+          <div className="pt-2 border-t border-border flex justify-between text-heading-sm font-semibold"><span>Total</span><span className="text-primary">{formatCurrency(order.totalAmount)}</span></div>
+        </div>
+      </div>
+
+      <div className="flex gap-3 pt-4 border-t border-border">
+        <Button variant="outline" className="flex-1" onClick={onClose}>Close</Button>
+        <Button className="flex-1" onClick={() => { onClose(); }}>Update Status</Button>
+      </div>
+    </div>
+  );
+}
+
+function InfoRow({ label, value, monospace = false, highlight = false }: { label: string; value: any; monospace?: boolean; highlight?: boolean }) {
+  return (
+    <div className="p-3 bg-warm-50 rounded-xl">
+      <p className="text-caption text-text-muted uppercase tracking-wider">{label}</p>
+      <p className={`font-medium text-charcoal-900 ${monospace ? 'font-mono' : ''} ${highlight ? 'text-primary' : ''}`}>{value}</p>
+    </div>
+  );
+}
+
+function StatusUpdateModal({ order, onClose, onUpdate }: { order: any; onClose: () => void; onUpdate: (status: OrderStatusName) => void }) {
+  const statusSequence: OrderStatusName[] = ['Pending', 'Confirmed', 'Preparing', 'Ready for Pickup', 'Completed'];
+  const currentIndex = statusSequence.indexOf(order.statusName);
+  const availableStatuses = statusSequence.slice(currentIndex + 1) as OrderStatusName[];
+
+  return (
+    <div className="space-y-6">
+      <div className="p-4 bg-warm-50 rounded-xl">
+        <p className="text-caption text-text-muted mb-1">Current Status</p>
+        <StatusBadge status={order.statusName} size="lg" />
+      </div>
+
+      <p className="text-body text-text-secondary">Select the new status for this order:</p>
+
+      <div className="space-y-3" role="radiogroup">
+        {availableStatuses.map((status) => (
+          <label key={status} className="flex items-center justify-between p-4 rounded-xl border-2 border-border hover:border-primary cursor-pointer transition-colors">
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 rounded-lg bg-primary-light flex items-center justify-center">
+                <StatusBadge status={status} size="sm" />
+              </div>
+              <div>
+                <p className="font-medium text-charcoal-900">{status}</p>
+                <p className="text-caption text-text-muted">Move order to {status.toLowerCase()}</p>
+              </div>
+            </div>
+            <input type="radio" name="status" value={status} onChange={() => onUpdate(status as OrderStatusName)} className="sr-only" />
+          </label>
+        ))}
+      </div>
+
+      <div className="flex gap-3 pt-4 border-t border-border">
+        <Button variant="outline" className="flex-1" onClick={onClose}>Cancel</Button>
+        <Button variant="primary" className="flex-1" disabled={availableStatuses.length === 0}>
+          {availableStatuses.length === 0 ? 'Order Completed' : 'Update Status'}
+        </Button>
+      </div>
+    </div>
+  );
+}
