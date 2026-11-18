@@ -3,6 +3,7 @@ import { useCart } from '../../context/CartContext';
 import { useOrders } from '../../context/OrderContext';
 import CakeImage from '../UI/CakeImage';
 import { formatPeso } from '../../utils/formatCurrency';
+import { calculateCartPricing } from '../../utils/cartPricing';
 import './CartSidebar.css';
 
 const CartSidebar = () => {
@@ -14,7 +15,8 @@ const CartSidebar = () => {
     getTotalPrice,
     updateQuantity,
     removeItem,
-    clearCart
+    clearCart,
+    promoCode
   } = useCart();
 
   const { createOrder } = useOrders();
@@ -49,9 +51,7 @@ const CartSidebar = () => {
 
   const totalItems = getTotalItems();
   const subtotal = getTotalPrice();
-  const tax = subtotal * 0.08;
-  const deliveryFee = subtotal >= 5600 ? 0 : 560;
-  const total = subtotal + tax + deliveryFee;
+  const { discount, tax, deliveryFee, total } = calculateCartPricing(subtotal, promoCode);
 
   const validateCheckout = () => {
     const errors = {};
@@ -71,7 +71,7 @@ const CartSidebar = () => {
       setTimeout(() => {
         const order = createOrder({
           items: [...items],
-          subtotal, tax, deliveryFee, total,
+          subtotal, discount, promoCode, tax, deliveryFee, total,
           customer: { ...orderDetails },
           pickupDateTime: `${orderDetails.pickupDate}T${orderDetails.pickupTime}`
         });
@@ -152,12 +152,14 @@ const CartSidebar = () => {
               <div className="cart-footer">
                 <div className="cart-summary">
                   <div className="summary-row"><span>Subtotal ({totalItems} items)</span><span>{formatPeso(subtotal)}</span></div>
+                  {discount > 0 && <div className="summary-row"><span>Discount ({promoCode})</span><span>−{formatPeso(discount)}</span></div>}
                   <div className="summary-row"><span>Estimated Tax (8%)</span><span>{formatPeso(tax)}</span></div>
                   <div className="summary-row"><span>Delivery Fee</span><span>{deliveryFee === 0 ? 'Free' : formatPeso(deliveryFee)}</span></div>
                   {subtotal < 5600 && <p className="free-delivery-hint">Add {formatPeso(5600 - subtotal)} more for free delivery!</p>}
                   <div className="summary-row total"><span>Total</span><span>{formatPeso(total)}</span></div>
                 </div>
                 <button className="btn btn-primary btn-lg btn-block checkout-btn" onClick={() => setCheckoutStep('details')} disabled={isCheckingOut}>Proceed to Checkout</button>
+                <a className="cart-full-page-link" href="#cart" onClick={closeCart}>View full cart</a>
                 {items.length > 1 && <button className="btn btn-secondary btn-sm btn-block clear-cart-btn" onClick={clearCart}>Clear Cart</button>}
               </div>
             )}

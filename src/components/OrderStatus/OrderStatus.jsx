@@ -205,6 +205,7 @@ const OrderStatus = () => {
               <div className="order-info-card totals">
                 <h4>Order Summary</h4>
                 <div className="totals-row"><span>Subtotal</span><span>{formatPeso(foundOrder.subtotal)}</span></div>
+                {foundOrder.discount > 0 && <div className="totals-row"><span>Discount ({foundOrder.promoCode})</span><span>−{formatPeso(foundOrder.discount)}</span></div>}
                 <div className="totals-row"><span>Tax (8%)</span><span>{formatPeso(foundOrder.tax)}</span></div>
                 <div className="totals-row"><span>Delivery</span><span>{foundOrder.deliveryFee === 0 ? 'Free' : formatPeso(foundOrder.deliveryFee)}</span></div>
                 <div className="totals-row total"><span>Total</span><span>{formatPeso(foundOrder.total)}</span></div>

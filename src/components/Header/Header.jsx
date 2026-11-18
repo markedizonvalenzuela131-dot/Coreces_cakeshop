@@ -21,7 +21,8 @@ const Header = () => {
     { id: 'about', label: 'About', href: '#about' },
     { id: 'cakes', label: 'Cakes', href: '#cakes' },
     { id: 'categories', label: 'Categories', href: '#categories' },
-    { id: 'contact', label: 'Contact', href: '#contact' }
+    { id: 'contact', label: 'Contact', href: '#contact' },
+    { id: 'cart', label: 'Cart', href: '#cart' }
   ];
 
   useEffect(() => {

@@ -10,6 +10,7 @@ import About from './components/About/About';
 import Contact from './components/Contact/Contact';
 import OrderStatus from './components/OrderStatus/OrderStatus';
 import CartSidebar from './components/Cart/CartSidebar';
+import CartPage from './pages/CartPage';
 import QuickViewModal from './components/QuickView/QuickViewModal';
 import Notification from './components/Notification/Notification';
 import CakePhoto from './components/UI/CakePhoto';
@@ -18,7 +19,7 @@ import './App.css';
 
 const getRoute = () => {
   const [page, query = ''] = window.location.hash.slice(1).split('?');
-  const validPages = ['home', 'about', 'cakes', 'categories', 'contact'];
+  const validPages = ['home', 'about', 'cakes', 'categories', 'contact', 'cart'];
   const params = new URLSearchParams(query);
 
   return {
@@ -97,6 +98,7 @@ function AppContent() {
         )}
         {route.page === 'categories' && <CategoryPage />}
         {route.page === 'contact' && <Contact />}
+        {route.page === 'cart' && <CartPage />}
       </main>
       <Footer />
       <CartSidebar />

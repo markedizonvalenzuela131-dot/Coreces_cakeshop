@@ -278,6 +278,15 @@
   margin-bottom: 12px;
 }
 
+.cart-full-page-link {
+  display: block;
+  padding: 8px;
+  color: var(--primary-color);
+  font-size: 0.875rem;
+  text-align: center;
+  text-decoration: underline;
+}
+
 .clear-cart-btn { }
 
 /* Checkout Form */

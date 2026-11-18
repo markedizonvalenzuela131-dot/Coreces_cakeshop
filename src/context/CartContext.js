@@ -24,6 +24,7 @@ export const CartProvider = ({ children }) => {
   });
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [notification, setNotification] = useState(null);
+  const [promoCode, setPromoCode] = useState('');
   const notificationTimer = useRef(null);
   const notificationId = useRef(0);
 
@@ -57,8 +58,11 @@ export const CartProvider = ({ children }) => {
 
   const removeItem = useCallback((productId) => {
     setItems(prev => prev.filter(item => item.id !== productId));
+    if (items.length === 1 && items[0].id === productId) {
+      setPromoCode('');
+    }
     showNotification('Item removed from cart', 'info');
-  }, [showNotification]);
+  }, [items, showNotification]);
 
   const updateQuantity = useCallback((productId, quantity) => {
     if (quantity <= 0) {
@@ -72,6 +76,7 @@ export const CartProvider = ({ children }) => {
 
   const clearCart = useCallback(() => {
     setItems([]);
+    setPromoCode('');
     showNotification('Cart cleared', 'info');
   }, [showNotification]);
 
@@ -95,6 +100,8 @@ export const CartProvider = ({ children }) => {
     items,
     isCartOpen,
     notification,
+    promoCode,
+    setPromoCode,
     addItem,
     removeItem,
     updateQuantity,
